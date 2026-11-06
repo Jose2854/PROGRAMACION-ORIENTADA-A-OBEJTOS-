@@ -1,0 +1,96 @@
+package curso1;
+
+/**
+ *
+ * @author Jose Leguizamon
+ */
+public class Curso {
+
+    private String nombreCurso;
+    private String docente;
+    private double valor;
+    private int cupos;
+
+    
+    public Curso() {
+    }
+
+    
+    public Curso(String nombreCurso, String docente,
+                 double valor, int cupos) {
+
+        this.nombreCurso = nombreCurso;
+        this.docente = docente;
+        this.valor = valor;
+        this.cupos = cupos;
+    }
+
+    
+    public String getNombreCurso() {
+        return this.nombreCurso;
+    }
+
+    public void setNombreCurso(String nombreCurso) {
+        this.nombreCurso = nombreCurso;
+    }
+
+    public String getDocente() {
+        return this.docente;
+    }
+
+    public void setDocente(String docente) {
+        this.docente = docente;
+    }
+
+    public double getValor() {
+        return this.valor;
+    }
+
+    public void setValor(double valor) {
+        this.valor = valor;
+    }
+
+    public int getCupos() {
+        return this.cupos;
+    }
+
+    public void setCupos(int cupos) {
+        this.cupos = cupos;
+    }
+
+    
+    public String verDetalle() {
+        return "NombreCurso: " + this.nombreCurso
+                + "\nDocente: " + this.docente
+                + "\nValor: " + this.valor
+                + "\nCupos: " + this.cupos;
+    }
+
+    
+    public double calcularDescuento(int porcentaje) {
+        return this.valor * porcentaje / 100.0;
+    }
+
+    
+    public double calcularDescuento(double porcentaje) {
+        return this.valor * porcentaje / 100.0;
+    }
+
+    
+    public double calcularPrecioFinal(double porcentaje) {
+        return this.valor - this.calcularDescuento(porcentaje);
+    }
+
+    
+    public String inscribirEstudiantes(int cantidad) {
+
+        if (cantidad <= this.cupos) {
+            this.cupos = this.cupos - cantidad;
+
+            return "Operacion realizada. Quedan "
+                    + this.cupos + " cupos";
+        } else {
+            return "No hay suficientes cupos";
+        }
+    }
+}
