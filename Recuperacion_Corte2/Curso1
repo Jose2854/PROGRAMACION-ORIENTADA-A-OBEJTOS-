@@ -1,0 +1,57 @@
+package curso1;
+
+/**
+ *
+ * @author Jose Leguizamon
+ */
+public class Curso1 {
+
+    public static void main(String[] args) {
+
+     
+        Curso obj1 = new Curso();
+
+        obj1.setNombreCurso("Programacion Java");
+        obj1.setDocente("Carlos Perez");
+        obj1.setValor(200000);
+        obj1.setCupos(10);
+
+        
+        Curso obj2 = new Curso(
+                "Base de Datos", "Ana Lopez", 150000, 20);
+
+        
+        System.out.println("DATOS DEL PRIMER CURSO");
+
+        System.out.println(obj1.getNombreCurso());
+        System.out.println(obj1.getDocente());
+        System.out.println(obj1.getValor());
+        System.out.println(obj1.getCupos());
+
+        
+        System.out.println("\nDETALLE DEL CURSO");
+        System.out.println(obj1.verDetalle());
+
+       
+        System.out.println("\nDESCUENTOS");
+
+        System.out.println(obj1.calcularDescuento(10));
+        System.out.println(obj1.calcularDescuento(12.5));
+
+        
+        System.out.println("\nPRECIO FINAL");
+
+        System.out.println(obj1.calcularPrecioFinal(10));
+
+       
+        System.out.println("\nINSCRIPCIONES");
+
+        System.out.println(obj1.inscribirEstudiantes(3));
+        System.out.println(obj1.inscribirEstudiantes(50));
+
+        
+        System.out.println("\nSEGUNDO CURSO");
+
+        System.out.println(obj2.verDetalle());
+    }
+}
