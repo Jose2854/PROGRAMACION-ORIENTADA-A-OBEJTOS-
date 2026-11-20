@@ -123,7 +123,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(allowedOrigins);
+        // Patterns preserve exact-origin support and also allow controlled
+        // platform routes such as https://*.openshiftapps.com.
+        configuration.setAllowedOriginPatterns(allowedOrigins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Tenant-Id", "X-API-Key"));
         configuration.setExposedHeaders(List.of("X-Total-Count", "X-Page-Count"));

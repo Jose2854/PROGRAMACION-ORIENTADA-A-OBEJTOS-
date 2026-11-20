@@ -24,7 +24,7 @@ data:
   SPRING_JPA_DIALECT: org.hibernate.dialect.PostgreSQLDialect
   SPRING_H2_CONSOLE: "false"
   FLYWAY_ENABLED: "true"
-  CORS_ALLOWED_ORIGINS: https://crm.colaereo.com
+  CORS_ALLOWED_ORIGINS: https://crm.colaereo.com,https://*.openshiftapps.com
   JWT_ACCESS_EXPIRATION_MS: "900000"
   JWT_REFRESH_EXPIRATION_MS: "604800000"
   MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
