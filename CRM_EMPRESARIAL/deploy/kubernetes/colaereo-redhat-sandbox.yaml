@@ -367,6 +367,8 @@ spec:
       app.kubernetes.io/component: frontend
   template:
     metadata:
+      annotations:
+        colaereo.com/revision: "2026-11-19-same-origin-proxy"
       labels:
         app.kubernetes.io/name: colaereo-crm
         app.kubernetes.io/component: frontend
