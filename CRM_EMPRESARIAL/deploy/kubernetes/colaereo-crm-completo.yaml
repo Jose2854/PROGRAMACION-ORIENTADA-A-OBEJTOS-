@@ -1,4 +1,7 @@
-# CRM COLAEREO - Despliegue completo para Kubernetes
+# CRM COLAEREO - Despliegue completo para OpenShift
+#
+# Este archivo usa el proyecto actualmente seleccionado en OpenShift.
+# No intenta crear namespaces ni necesita permisos de administrador.
 #
 # Antes de aplicar, reemplazar:
 #   1. CAMBIAR_PASSWORD_BASE_DATOS
@@ -6,20 +9,12 @@
 #   3. https://crm.colaereo.com si se utilizara otro dominio
 #
 # Aplicar con:
-#   kubectl apply -f colaereo-crm-completo.yaml
+#   oc apply -f colaereo-crm-completo.yaml
 
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: colaereo-crm
-  labels:
-    app.kubernetes.io/name: colaereo-crm
----
 apiVersion: v1
 kind: Secret
 metadata:
   name: colaereo-database-secret
-  namespace: colaereo-crm
   labels:
     app.kubernetes.io/name: colaereo-crm
     app.kubernetes.io/component: database
@@ -33,7 +28,6 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: colaereo-backend-secret
-  namespace: colaereo-crm
   labels:
     app.kubernetes.io/name: colaereo-crm
     app.kubernetes.io/component: backend
@@ -45,7 +39,6 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: colaereo-backend-config
-  namespace: colaereo-crm
   labels:
     app.kubernetes.io/name: colaereo-crm
     app.kubernetes.io/component: backend
@@ -59,17 +52,18 @@ data:
   CORS_ALLOWED_ORIGINS: https://crm.colaereo.com
   JWT_ACCESS_EXPIRATION_MS: "900000"
   JWT_REFRESH_EXPIRATION_MS: "604800000"
-  MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  MANAGEMENT_HEALTH_REDIS_ENABLED: "true"
   SPRING_DATA_REDIS_REPOSITORIES_ENABLED: "false"
   MAIL_USERNAME: ""
   MAIL_PASSWORD: ""
-  JAVA_TOOL_OPTIONS: -Xms512m -Xmx4g
+  JAVA_TOOL_OPTIONS: -Xms256m -Xmx3g
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: colaereo-postgres-data
-  namespace: colaereo-crm
   labels:
     app.kubernetes.io/name: colaereo-crm
     app.kubernetes.io/component: database
@@ -84,7 +78,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: database
-  namespace: colaereo-crm
   labels:
     app.kubernetes.io/name: colaereo-crm
     app.kubernetes.io/component: database
@@ -104,23 +97,36 @@ spec:
     spec:
       containers:
         - name: postgresql
-          image: postgres:15-alpine
+          image: quay.io/sclorg/postgresql-15-c9s:latest
           imagePullPolicy: IfNotPresent
           ports:
             - name: postgresql
               containerPort: 5432
-          envFrom:
-            - secretRef:
-                name: colaereo-database-secret
+          env:
+            - name: POSTGRESQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: colaereo-database-secret
+                  key: POSTGRES_DB
+            - name: POSTGRESQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: colaereo-database-secret
+                  key: POSTGRES_USER
+            - name: POSTGRESQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: colaereo-database-secret
+                  key: POSTGRES_PASSWORD
           volumeMounts:
             - name: postgres-data
-              mountPath: /var/lib/postgresql/data
+              mountPath: /var/lib/pgsql/data
           readinessProbe:
             exec:
               command:
                 - /bin/sh
                 - -c
-                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+                - pg_isready -U "$POSTGRESQL_USER" -d "$POSTGRESQL_DATABASE"
             initialDelaySeconds: 10
             periodSeconds: 5
             timeoutSeconds: 5
@@ -130,7 +136,7 @@ spec:
               command:
                 - /bin/sh
                 - -c
-                - pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+                - pg_isready -U "$POSTGRESQL_USER" -d "$POSTGRESQL_DATABASE"
             initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 5
@@ -150,7 +156,6 @@ apiVersion: v1
 kind: Service
 metadata:
   name: database
-  namespace: colaereo-crm
   labels:
     app.kubernetes.io/name: colaereo-crm
     app.kubernetes.io/component: database
@@ -167,8 +172,78 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: redis
+  labels:
+    app.kubernetes.io/name: colaereo-crm
+    app.kubernetes.io/component: cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: colaereo-crm
+      app.kubernetes.io/component: cache
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: colaereo-crm
+        app.kubernetes.io/component: cache
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          imagePullPolicy: IfNotPresent
+          args:
+            - redis-server
+            - --save
+            - ""
+            - --appendonly
+            - "no"
+          ports:
+            - name: redis
+              containerPort: 6379
+          readinessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command:
+                - redis-cli
+                - ping
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  labels:
+    app.kubernetes.io/name: colaereo-crm
+    app.kubernetes.io/component: cache
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: colaereo-crm
+    app.kubernetes.io/component: cache
+  ports:
+    - name: redis
+      port: 6379
+      targetPort: redis
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
   name: backend
-  namespace: colaereo-crm
   labels:
     app.kubernetes.io/name: colaereo-crm
     app.kubernetes.io/component: backend
@@ -186,11 +261,17 @@ spec:
     spec:
       initContainers:
         - name: wait-for-database
-          image: postgres:15-alpine
+          image: quay.io/sclorg/postgresql-15-c9s:latest
           command:
             - /bin/sh
             - -c
             - until pg_isready -h database -p 5432; do sleep 2; done
+        - name: wait-for-redis
+          image: redis:7-alpine
+          command:
+            - /bin/sh
+            - -c
+            - until redis-cli -h redis ping; do sleep 2; done
       containers:
         - name: backend
           image: ghcr.io/jose2854/colaereo-crm-backend:latest
@@ -241,13 +322,12 @@ spec:
               memory: 1Gi
             limits:
               cpu: "2"
-              memory: 5Gi
+              memory: 4Gi
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: backend
-  namespace: colaereo-crm
   labels:
     app.kubernetes.io/name: colaereo-crm
     app.kubernetes.io/component: backend
@@ -265,12 +345,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
-  namespace: colaereo-crm
   labels:
     app.kubernetes.io/name: colaereo-crm
     app.kubernetes.io/component: frontend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/name: colaereo-crm
@@ -314,12 +393,11 @@ apiVersion: v1
 kind: Service
 metadata:
   name: frontend
-  namespace: colaereo-crm
   labels:
     app.kubernetes.io/name: colaereo-crm
     app.kubernetes.io/component: frontend
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app.kubernetes.io/name: colaereo-crm
     app.kubernetes.io/component: frontend
@@ -327,3 +405,21 @@ spec:
     - name: http
       port: 80
       targetPort: http
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: colaereo-crm
+  labels:
+    app.kubernetes.io/name: colaereo-crm
+    app.kubernetes.io/component: frontend
+spec:
+  to:
+    kind: Service
+    name: frontend
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
