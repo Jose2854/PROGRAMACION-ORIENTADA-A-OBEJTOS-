@@ -1,0 +1,51 @@
+# Actualizacion segura para una instalacion existente en Red Hat Developer Sandbox.
+# Solo renueva el frontend y no modifica contrasenas, base de datos ni datos del CRM.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app.kubernetes.io/name: colaereo-crm
+    app.kubernetes.io/component: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: colaereo-crm
+      app.kubernetes.io/component: frontend
+  template:
+    metadata:
+      annotations:
+        colaereo.com/revision: "2026-11-19-same-origin-proxy"
+      labels:
+        app.kubernetes.io/name: colaereo-crm
+        app.kubernetes.io/component: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/jose2854/colaereo-crm-frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
