@@ -1,0 +1,48 @@
+/*
+ * CRM SaaS - Copyright (c) 2024-2026 Hector Andres Ladino
+ * Licensed under MIT License. See LICENSE file for details.
+ */
+package com.crm.service;
+
+import com.crm.entity.FormularioWeb;
+import com.crm.repository.FormularioWebRepository;
+import com.crm.security.TenantContext;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class FormularioWebService {
+    private final FormularioWebRepository repository;
+
+    public List<FormularioWeb> findAll(Long tenantId) {
+        return repository.findByTenantId(tid());
+    }
+
+    public FormularioWeb save(FormularioWeb form) {
+        form.setTenantId(tid());
+        if (form.getEmbedToken() == null || form.getEmbedToken().isEmpty()) {
+            form.setEmbedToken(UUID.randomUUID().toString().replace("-", ""));
+        }
+        return repository.save(form);
+    }
+
+    public FormularioWeb submit(String token) {
+        FormularioWeb form = repository.findByEmbedToken(token)
+                .orElseThrow(() -> new RuntimeException("Formulario no encontrado"));
+        form.setTotalEnvios(form.getTotalEnvios() + 1);
+        return repository.save(form);
+    }
+
+    public void delete(Long id) {
+        repository.delete(repository.findByTenantIdAndId(tid(), id)
+                .orElseThrow(() -> new RuntimeException("Formulario no encontrado")));
+    }
+
+    private Long tid() { return TenantContext.requireCurrentTenant(); }
+}

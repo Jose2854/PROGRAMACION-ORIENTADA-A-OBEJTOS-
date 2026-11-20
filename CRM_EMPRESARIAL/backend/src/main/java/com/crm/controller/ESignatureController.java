@@ -1,0 +1,57 @@
+/*
+ * CRM SaaS - Copyright (c) 2024-2026 Hector Andres Ladino
+ * Licensed under MIT License. See LICENSE file for details.
+ */
+package com.crm.controller;
+
+import com.crm.entity.ESignatureRequest;
+import com.crm.security.TenantContext;
+import com.crm.service.ESignatureService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/esignature")
+@RequiredArgsConstructor
+public class ESignatureController {
+
+    private final ESignatureService eSignatureService;
+
+    @GetMapping
+    public ResponseEntity<List<ESignatureRequest>> getAll() {
+        return ResponseEntity.ok(eSignatureService.findAll(getCurrentTenantId()));
+    }
+
+    @PostMapping
+    public ResponseEntity<ESignatureRequest> create(@RequestBody ESignatureRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(eSignatureService.create(request));
+    }
+
+    @PostMapping("/sign")
+    public ResponseEntity<ESignatureRequest> sign(@RequestBody Map<String, String> body) {
+        try {
+            String ip = body.getOrDefault("ip", "unknown");
+            return ResponseEntity.ok(eSignatureService.sign(body.get("token"), ip));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<Void> cancel(@PathVariable Long id) {
+        eSignatureService.cancel(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    private Long getCurrentTenantId() {
+        Long tid = TenantContext.getCurrentTenant();
+        if (tid == null) throw new RuntimeException("No tenant context");
+        return tid;
+    }
+}
+

@@ -1,0 +1,51 @@
+/*
+ * CRM SaaS - Copyright (c) 2024-2026 Hector Andres Ladino
+ * Licensed under MIT License. See LICENSE file for details.
+ */
+package com.crm.repository;
+
+import com.crm.entity.ServicioCliente;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface ServicioClienteRepository extends JpaRepository<ServicioCliente, Long> {
+    
+    List<ServicioCliente> findByClienteId(Long clienteId);
+    List<ServicioCliente> findByTenantId(Long tenantId);
+    Optional<ServicioCliente> findByIdAndTenantId(Long id, Long tenantId);
+    List<ServicioCliente> findByTenantIdAndClienteId(Long tenantId, Long clienteId);
+    List<ServicioCliente> findByTenantIdAndEstado(Long tenantId, ServicioCliente.EstadoServicio estado);
+    List<ServicioCliente> findByTenantIdAndTipo(Long tenantId, ServicioCliente.TipoPQRS tipo);
+    List<ServicioCliente> findByTenantIdAndPrioridad(Long tenantId, ServicioCliente.PrioridadPQRS prioridad);
+    List<ServicioCliente> findByTenantIdAndAsignadoA(Long tenantId, String asignadoA);
+    
+    List<ServicioCliente> findByEstado(ServicioCliente.EstadoServicio estado);
+    
+    List<ServicioCliente> findByTipo(ServicioCliente.TipoPQRS tipo);
+    
+    List<ServicioCliente> findByPrioridad(ServicioCliente.PrioridadPQRS prioridad);
+    
+    List<ServicioCliente> findByAsignadoA(String asignadoA);
+    
+    @Query("SELECT s FROM ServicioCliente s WHERE s.cliente.id = :clienteId AND s.estado = :estado")
+    List<ServicioCliente> findByClienteIdAndEstado(@Param("clienteId") Long clienteId, 
+                                                   @Param("estado") ServicioCliente.EstadoServicio estado);
+    
+    @Query("SELECT s FROM ServicioCliente s WHERE s.tenantId = :tenantId AND s.prioridad = :prioridad AND s.estado NOT IN ('RESUELTO', 'CERRADO')")
+    List<ServicioCliente> findUrgentesAbiertosByTenantId(@Param("tenantId") Long tenantId,
+            @Param("prioridad") ServicioCliente.PrioridadPQRS prioridad);
+    
+    @Query("SELECT COUNT(s) FROM ServicioCliente s WHERE s.tenantId = :tenantId AND s.estado = :estado")
+    Long countByEstado(@Param("tenantId") Long tenantId, @Param("estado") ServicioCliente.EstadoServicio estado);
+    
+    @Query("SELECT s FROM ServicioCliente s WHERE s.tenantId = :tenantId AND s.fechaCreacion BETWEEN :fechaInicio AND :fechaFin")
+    List<ServicioCliente> findByFechaCreacionBetween(@Param("tenantId") Long tenantId, @Param("fechaInicio") LocalDateTime fechaInicio, 
+                                                      @Param("fechaFin") LocalDateTime fechaFin);
+}

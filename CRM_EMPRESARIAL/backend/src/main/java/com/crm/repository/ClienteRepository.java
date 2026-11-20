@@ -1,0 +1,44 @@
+/*
+ * CRM SaaS - Copyright (c) 2024-2026 Hector Andres Ladino
+ * Licensed under MIT License. See LICENSE file for details.
+ */
+package com.crm.repository;
+
+import com.crm.entity.Cliente;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface ClienteRepository extends JpaRepository<Cliente, Long> {
+    
+    Optional<Cliente> findByTenantIdAndEmail(Long tenantId, String email);
+    
+    List<Cliente> findByEstado(Cliente.EstadoCliente estado);
+    
+    @Query("SELECT c FROM Cliente c WHERE c.tenantId = :tenantId AND (c.nombre LIKE %:nombre% OR c.apellido LIKE %:apellido%)")
+    List<Cliente> buscarPorNombre(@Param("tenantId") Long tenantId, @Param("nombre") String nombre, @Param("apellido") String apellido);
+    
+    @Query("SELECT c FROM Cliente c WHERE c.tenantId = :tenantId AND c.empresa LIKE %:empresa%")
+    List<Cliente> buscarPorEmpresa(@Param("tenantId") Long tenantId, @Param("empresa") String empresa);
+    
+    @Query("SELECT c FROM Cliente c WHERE c.tenantId = :tenantId AND c.identificacion = :identificacion")
+    Optional<Cliente> findByIdentificacion(@Param("tenantId") Long tenantId, @Param("identificacion") String identificacion);
+    
+    boolean existsByTenantIdAndEmail(Long tenantId, String email);
+    
+    boolean existsByTenantIdAndIdentificacion(Long tenantId, String identificacion);
+
+    long countByTenantId(Long tenantId);
+    List<Cliente> findByTenantId(Long tenantId);
+    Optional<Cliente> findByIdAndTenantId(Long id, Long tenantId);
+    boolean existsByIdAndTenantId(Long id, Long tenantId);
+    List<Cliente> findByTenantIdAndEstado(Long tenantId, Cliente.EstadoCliente estado);
+    List<Cliente> findByTenantIdAndNombreContainingIgnoreCaseOrTenantIdAndApellidoContainingIgnoreCase(
+            Long tenantIdForName, String nombre, Long tenantIdForLastName, String apellido);
+    List<Cliente> findByTenantIdAndEmpresaContainingIgnoreCase(Long tenantId, String empresa);
+}

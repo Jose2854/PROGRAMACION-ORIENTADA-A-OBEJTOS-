@@ -1,0 +1,20 @@
+/*
+ * CRM SaaS - Copyright (c) 2024-2026 Hector Andres Ladino
+ * Licensed under MIT License. See LICENSE file for details.
+ */
+package com.crm.repository;
+
+import com.crm.entity.Webhook;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface WebhookRepository extends JpaRepository<Webhook, Long> {
+    List<Webhook> findByTenantId(Long tenantId);
+    List<Webhook> findByTenantIdAndEsActivo(Long tenantId, Boolean esActivo);
+    List<Webhook> findByTenantIdAndEvento(Long tenantId, String evento);
+    Optional<Webhook> findByTenantIdAndId(Long tenantId, Long id);
+}

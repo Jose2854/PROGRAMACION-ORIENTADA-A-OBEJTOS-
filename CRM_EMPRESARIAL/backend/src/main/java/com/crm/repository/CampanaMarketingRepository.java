@@ -1,0 +1,27 @@
+/*
+ * CRM SaaS - Copyright (c) 2024-2026 Hector Andres Ladino
+ * Licensed under MIT License. See LICENSE file for details.
+ */
+package com.crm.repository;
+
+import com.crm.entity.CampanaMarketing;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface CampanaMarketingRepository extends JpaRepository<CampanaMarketing, Long> {
+    
+    List<CampanaMarketing> findByEstado(String estado);
+    List<CampanaMarketing> findByTipo(String tipo);
+    List<CampanaMarketing> findByFechaInicioBetween(LocalDate inicio, LocalDate fin);
+    Optional<CampanaMarketing> findByNombre(String nombre);
+    List<CampanaMarketing> findBySegmento(String segmento);
+    List<CampanaMarketing> findByTenantId(Long tenantId);
+    Optional<CampanaMarketing> findByTenantIdAndId(Long tenantId, Long id);
+    List<CampanaMarketing> findByTenantIdAndEstado(Long tenantId, String estado);
+    List<CampanaMarketing> findByTenantIdAndTipo(Long tenantId, String tipo);
+}

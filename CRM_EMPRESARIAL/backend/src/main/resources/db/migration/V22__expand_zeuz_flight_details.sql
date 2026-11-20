@@ -1,0 +1,1 @@
+ALTER TABLE ventas ALTER COLUMN vuelo TYPE TEXT;
